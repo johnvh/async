@@ -210,6 +210,41 @@ exports['auto removeListener has side effect on loop iterator'] = function(test)
     });
 };
 
+exports['auto with synchronous callbacks'] = function(test){
+    var numCalls = {
+        a: 0,
+        b: 0,
+        c: 0
+    };
+    async.auto({
+        a: function(callback){
+            numCalls.a++;
+            setTimeout(function(){
+                callback(null, 'a');
+            }, 1);
+        },
+        // both 'b' and 'c' should be invoked immediately on 'a' callback
+        // 'b' will callback ASYNChronously
+        // 'c' will callback SYNChronously
+        b: ['a', function(callback){
+            numCalls.b++;
+            setTimeout(function(){
+                callback(null, 'b');
+            }, 1);
+        }],
+        c: ['a', function(callback){
+            numCalls.c++;
+            callback(null, 'c');
+        }]
+    }, function(err, results){
+        var msg = 'task should be invoked 1 time';
+        test.strictEqual(numCalls.a, 1, msg);
+        test.strictEqual(numCalls.b, 1, msg);
+        test.strictEqual(numCalls.c, 1, msg);
+        test.done();
+    });
+};
+
 exports['waterfall'] = function(test){
     test.expect(6);
     var call_order = [];
